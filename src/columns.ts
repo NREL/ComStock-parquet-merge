@@ -2,6 +2,7 @@ export const allColumns: readonly string[] = [
   'bldg_id',
   'upgrade',
   'in.upgrade_name',
+  'in.county_name,
   'applicability',
   'weight',
   'in.comstock_building_type_group',
