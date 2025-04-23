@@ -22,7 +22,7 @@ export function ParquetMerge() {
 
   const [states, setStates] = useState<string[]>([])
   const [counties, setCounties] = useState<string[]>([])
-  const [columns, setColumns] = useState<string[]>(allColumns.slice(0, 5))
+  const [columns, setColumns] = useState<string[]>(allColumns)
   const [upgrades, setUpgrades] = useState<string[]>([])
 
   const [isDownloading, setIsDownloading] = useState(false)
@@ -74,13 +74,13 @@ export function ParquetMerge() {
 
     const nested = nestedCounties()
 
-    const urlGroups: string[][] = states.flatMap((stateFips) => {
+    const urlGroups: { county: string; url: string }[][] = states.flatMap((stateFips) => {
       const state = stateLookup[stateFips]
       return nested[stateFips].map((county) =>
-        ['baseline', ...upgrades].map(
-          (upgrade) =>
-            `https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/comstock_amy2018_release_2/metadata_and_annual_results_aggregates/by_state_and_county/full/parquet/state%3D${state}/county%3D${county}/${state}_${county}_${upgrade}_agg.parquet`,
-        ),
+        ['baseline', ...upgrades].map((upgrade) => ({
+          county: countyLookup[stateFips][county],
+          url: `https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2024/comstock_amy2018_release_2/metadata_and_annual_results_aggregates/by_state_and_county/full/parquet/state%3D${state}/county%3D${county}/${state}_${county}_${upgrade}_agg.parquet`,
+        })),
       )
     })
 
@@ -89,7 +89,7 @@ export function ParquetMerge() {
     setProgress([completed, totalUrls])
 
     const data = []
-    for (const url of urlGroups.flat()) {
+    for (const { county, url } of urlGroups.flat()) {
       let file: AsyncBuffer
       try {
         file = await asyncBufferFromUrl({ url })
@@ -98,7 +98,14 @@ export function ParquetMerge() {
         continue
       }
 
-      data.push(...(await parquetReadObjects({ file, compressors, columns })))
+      const withCountyName = columns.includes('in.county_name')
+      const datum = await parquetReadObjects({
+        file,
+        compressors,
+        columns: columns.filter((column) => column !== 'in.county_name'),
+      })
+      data.push(...datum.map((obj) => (withCountyName ? { ...obj, 'in.county_name': county } : obj)))
+
       setProgress([++completed, totalUrls])
     }
     if (data.length > 0) {
