@@ -49,4 +49,4 @@ After installation, you can use the following commands to develop and build the 
 
 ## Updating the ComStock Jekyll site
 
-Run the build step to create the optimized `dist/parquet-merge.js` output file, then copy that file to `assets/js/parquet-merge.js` in the [ComStock.github.io](https://github.com/NREL/ComStock.github.io) repo.
+Run the build step to create the optimized `dist/parquet-merge-{hash}.js` output file, then copy that file to `assets/js/*` in the [ComStock.github.io](https://github.com/NREL/ComStock.github.io) repo. **Be sure to delete the previous file.**

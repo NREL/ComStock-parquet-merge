@@ -155,7 +155,7 @@ export function ParquetMerge() {
             ))}
           </select>
 
-          <select multiple required onChange={onInputMultiple(setCounties)}>
+          <select multiple required class="min-w-50" onChange={onInputMultiple(setCounties)}>
             <option disabled value="">
               Select counties
             </option>

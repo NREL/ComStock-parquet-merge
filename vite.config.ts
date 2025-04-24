@@ -8,7 +8,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: 'parquet-merge.js',
+        entryFileNames: 'parquet-merge-[hash].js',
       },
     },
   },
