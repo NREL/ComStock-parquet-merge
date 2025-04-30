@@ -7,9 +7,9 @@ import { allColumns, allUpgrades } from './columns'
 import { convertToCsv, downloadCsv } from './downloadCsv'
 import { countyLookup, stateLookup } from './geo'
 import { personas } from './personas'
-import { uploadS3File } from './s3'
 import { onInput, onInputMultiple } from './utils'
 import './style.css'
+import { first } from 'rxjs'
 
 const sortedStates = Object.entries(stateLookup).sort(([, stateA], [, stateB]) => stateA.localeCompare(stateB))
 
@@ -47,12 +47,12 @@ export function ParquetMerge() {
     [firstName, lastName, email, useCase, persona].some((field) => !field.trim().length) ||
     [states, counties, columns, upgrades].some((list) => !list.length)
 
-  const uploadUserQuery = async () => {
+  const submitUserQuery = async () => {
     const selectedCounties = Object.entries(nestedCounties()).flatMap(([stateFips, countyIds]) =>
       countyIds.map((countyId) => `${countyLookup[stateFips][countyId]} (${countyId})`),
     )
 
-    const data = {
+    const params = new URLSearchParams({
       'First Name': firstName,
       'Last Name': lastName,
       Email: email,
@@ -62,15 +62,19 @@ export function ParquetMerge() {
       'Selected Counties': selectedCounties.join(', '),
       'Selected Datasets': upgrades.join(', '),
       Timestamp: new Date().toISOString(),
-    }
+    })
 
-    await uploadS3File(convertToCsv([data], Object.keys(data)))
+    try {
+      await fetch(`https://submit-form.com/VRxEFT3l1?${params.toString()}`, { redirect: 'manual' })
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const download = async () => {
     setIsDownloading(true)
 
-    await uploadUserQuery()
+    await submitUserQuery()
 
     const nested = nestedCounties()
 
@@ -123,14 +127,14 @@ export function ParquetMerge() {
 
         <div class="flex flex-col gap-3">
           <div class="flex gap-3">
-            <input type="text" placeholder="First Name" autoComplete="given-name" required value={firstName} onInput={onInput(setFirstName)} />
-            <input type="text" placeholder="Last Name" autoComplete="family-name" required value={lastName} onInput={onInput(setLastName)} />
+            <input type="text" placeholder="First Name *" autoComplete="given-name" required value={firstName} onInput={onInput(setFirstName)} />
+            <input type="text" placeholder="Last Name *" autoComplete="family-name" required value={lastName} onInput={onInput(setLastName)} />
           </div>
-          <input type="email" placeholder="Email" autoComplete="email" required value={email} onInput={onInput(setEmail)} />
-          <textarea placeholder="Use Case" class="resize-none" required value={useCase} onInput={onInput(setUseCase)}></textarea>
+          <input type="email" placeholder="Email *" autoComplete="email" required value={email} onInput={onInput(setEmail)} />
+          <textarea placeholder="Use Case *" class="resize-none" required value={useCase} onInput={onInput(setUseCase)}></textarea>
           <select required value={persona} onChange={onInput(setPersona)}>
             <option value="" disabled>
-              Select Persona
+              Select Persona *
             </option>
             {personas.map((persona) => (
               <option key={persona} value={persona}>
