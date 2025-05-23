@@ -9,7 +9,8 @@ import { countyLookup, stateLookup } from './geo'
 import { personas } from './personas'
 import { onInput, onInputMultiple } from './utils'
 import './style.css'
-import { first } from 'rxjs'
+
+const { SNAPPY, ZSTD } = compressors
 
 const sortedStates = Object.entries(stateLookup).sort(([, stateA], [, stateB]) => stateA.localeCompare(stateB))
 
@@ -52,20 +53,24 @@ export function ParquetMerge() {
       countyIds.map((countyId) => `${countyLookup[stateFips][countyId]} (${countyId})`),
     )
 
-    const params = new URLSearchParams({
-      'First Name': firstName,
-      'Last Name': lastName,
-      Email: email,
-      'Use Case': useCase,
-      Persona: persona,
-      'Selected States': states.map((stateFips) => stateLookup[stateFips]).join(', '),
-      'Selected Counties': selectedCounties.join(', '),
-      'Selected Datasets': upgrades.join(', '),
-      Timestamp: new Date().toISOString(),
-    })
-
     try {
-      await fetch(`https://submit-form.com/VRxEFT3l1?${params.toString()}`, { redirect: 'manual' })
+      await fetch('https://prod-55.usgovtexas.logic.azure.us:443/workflows/8b47d4fb1f41411781ec7836210884f8/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=65ao8WvmFQE5KtK39j2ni_FSANzTt_MUb9JHVQHbwnw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'First Name': firstName,
+          'Last Name': lastName,
+          Email: email,
+          'Use Case': useCase,
+          Persona: persona,
+          'Selected States': states.map((stateFips) => stateLookup[stateFips]).join(', '),
+          'Selected Counties': selectedCounties.join(', '),
+          'Selected Datasets': upgrades.join(', '),
+          Timestamp: new Date().toISOString(),
+        }),
+      })
     } catch (err) {
       console.error(err)
     }
@@ -105,7 +110,7 @@ export function ParquetMerge() {
       const withCountyName = columns.includes('in.county_name')
       const datum = await parquetReadObjects({
         file,
-        compressors,
+        compressors: { SNAPPY, ZSTD },
         columns: columns.filter((column) => column !== 'in.county_name'),
       })
       data.push(...datum.map((obj) => (withCountyName ? { ...obj, 'in.county_name': county } : obj)))

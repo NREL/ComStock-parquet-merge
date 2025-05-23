@@ -1,6 +1,6 @@
 # Comstock Parquet Merge
 
-This project demonstrates how to fetch ComStock parquet column data from S3 directly in the browser, parse these files (regardless of the compression method used), concatenate them, and download the results as a csv file.
+This project demonstrates how to fetch ComStock parquet column data from S3 directly in the browser, parse these files with zstd compression, concatenate them, and download the results as a csv file.
 
 It leverages modern web technologies including Bun and Vite for fast development and build processes, and uses Preact for a lightweight UI layer with TailwindCSS for styling.
 
